@@ -201,19 +201,9 @@ const LeftPanel: React.FC<LeftPanelProps> = ({ paragraphs }) => {
 
     const currentParagraph = paragraphs[currentIndex];
 
-    // Generate random emotion level 1-10 for testing (consistent per unique paragraph)
-    const getRandomEmotionLevel = (paragraph: ParagraphDocument) => {
-        // Create a unique identifier combining multiple fields
-        const uniqueId = `${paragraph.book}-${paragraph.paragraph_index}-${paragraph.id}`;
-        const hash = uniqueId.split('').reduce((a, b) => {
-            a = ((a << 5) - a) + b.charCodeAt(0);
-            return a & a;
-        }, 0);
-        return Math.abs(hash % 10) + 1; // 1-10
-    };
-
-    const testEmotionLevel = getRandomEmotionLevel(currentParagraph);
-    const emotionStyle = getEmotionStyles(currentParagraph.emotion, testEmotionLevel);
+    // Use actual emotion level from database instead of randomized for testing
+    const actualEmotionLevel = currentParagraph.emotion_level || 5; // Fallback to 5 if not set
+    const emotionStyle = getEmotionStyles(currentParagraph.emotion, actualEmotionLevel);
 
     // Gray styles for processing phase
     const grayStyle = {
@@ -288,7 +278,7 @@ const LeftPanel: React.FC<LeftPanelProps> = ({ paragraphs }) => {
                             border: `1px solid ${emotionStyle.borderColor}`
                         }}
                     >
-                        {currentParagraph.emotion} • Level {Math.ceil(testEmotionLevel / 2)}
+                        {currentParagraph.emotion} • Level {Math.ceil(actualEmotionLevel / 2)}
                     </motion.div>
                 )}
             </div>
@@ -332,7 +322,7 @@ const LeftPanel: React.FC<LeftPanelProps> = ({ paragraphs }) => {
                 }}>
                     <AnimatePresence mode="wait">
                         <motion.div
-                            key={`${currentParagraph.book}-${currentParagraph.paragraph_index}-${currentParagraph.id}`}
+                            key={`${currentParagraph.book}-${currentParagraph.paragraph_index}-${currentParagraph.id}-${currentIndex}`}
                             initial={{ opacity: 0, scale: 0.85, y: 60 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.85, y: -60 }}
@@ -411,7 +401,7 @@ const LeftPanel: React.FC<LeftPanelProps> = ({ paragraphs }) => {
                     marginBottom: '16px'
                 }}>
                     {paragraphs.map((paragraph, index) => {
-                        const paragraphEmotionLevel = getRandomEmotionLevel(paragraph);
+                        const paragraphEmotionLevel = paragraph.emotion_level || 5;
                         const paragraphEmotionStyle = getEmotionStyles(paragraph.emotion, paragraphEmotionLevel);
 
                         // Determine color based on state

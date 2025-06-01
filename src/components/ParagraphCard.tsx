@@ -115,19 +115,9 @@ const ParagraphCard: React.FC<ParagraphCardProps> = ({
 }) => {
     const [animationPhase, setAnimationPhase] = useState<AnimationPhase>('processing');
 
-    // Generate random emotion level 1-10 for testing (consistent per unique paragraph)
-    const getRandomEmotionLevel = (paragraph: ParagraphDocument) => {
-        // Create a unique identifier combining multiple fields
-        const uniqueId = `${paragraph.book}-${paragraph.paragraph_index}-${paragraph.id}`;
-        const hash = uniqueId.split('').reduce((a, b) => {
-            a = ((a << 5) - a) + b.charCodeAt(0);
-            return a & a;
-        }, 0);
-        return Math.abs(hash % 10) + 1; // 1-10
-    };
-
-    const testEmotionLevel = getRandomEmotionLevel(paragraph);
-    const emotionStyle = getEmotionStyles(paragraph.emotion, testEmotionLevel);
+    // Use actual emotion level from database instead of randomized for testing
+    const actualEmotionLevel = paragraph.emotion_level || 5; // Fallback to 5 if not set
+    const emotionStyle = getEmotionStyles(paragraph.emotion, actualEmotionLevel);
     const cardClass = isExpanded ? 'emotion-card' : 'feed-card';
     const textClass = isExpanded ? 'emotion-text' : 'feed-text';
 
@@ -280,7 +270,7 @@ const ParagraphCard: React.FC<ParagraphCardProps> = ({
                                     backdropFilter: 'blur(4px)'
                                 }}
                             >
-                                {paragraph.emotion} • {Math.ceil(testEmotionLevel / 2)}
+                                {paragraph.emotion} • {Math.ceil(actualEmotionLevel / 2)}
                             </motion.div>
                         ) : (
                             // Processing indicator
@@ -380,22 +370,26 @@ const ParagraphCard: React.FC<ParagraphCardProps> = ({
                                 </span>
                                 <div style={{ display: 'flex', gap: '4px' }}>
                                     {[1, 2, 3, 4, 5].map((level) => {
-                                        const mappedLevel = Math.ceil(testEmotionLevel / 2);
+                                        const mappedLevel = Math.ceil(actualEmotionLevel / 2);
                                         const isActive = level <= mappedLevel;
 
                                         return (
-                                            <motion.div
+                                            <div
                                                 key={level}
-                                                initial={{ scale: 0 }}
-                                                animate={{ scale: 1 }}
-                                                transition={{ duration: 0.2, delay: 0.3 + (level * 0.05) }}
                                                 style={{
-                                                    width: '8px',
-                                                    height: '8px',
+                                                    width: isExpanded ? '8px' : '6px',
+                                                    height: isExpanded ? '8px' : '6px',
                                                     borderRadius: '50%',
-                                                    backgroundColor: isActive ? emotionStyle.borderColor : 'rgba(107, 114, 128, 0.3)',
+                                                    backgroundColor: isActive ?
+                                                        emotionStyle.borderColor : // Use emotion color for both expanded and feed
+                                                        (isExpanded ? 'rgba(107, 114, 128, 0.3)' : 'rgba(255, 255, 255, 0.3)'),
                                                     transition: 'all 0.2s',
-                                                    boxShadow: isActive ? `0 0 8px ${emotionStyle.borderColor}60` : 'none'
+                                                    boxShadow: isActive ?
+                                                        (isExpanded
+                                                            ? `0 0 8px ${emotionStyle.borderColor}60`
+                                                            : `0 0 4px ${emotionStyle.borderColor}50, 0 1px 2px rgba(0, 0, 0, 0.3)` // Use emotion color for feed glow
+                                                        ) :
+                                                        'none'
                                                 }}
                                             />
                                         );
@@ -485,7 +479,7 @@ const ParagraphCard: React.FC<ParagraphCardProps> = ({
                             backdropFilter: 'blur(4px)',
                             textShadow: isExpanded ? 'none' : '0 1px 1px rgba(0, 0, 0, 0.7)'
                         }}>
-                            {paragraph.emotion} {isExpanded && `• ${Math.ceil(testEmotionLevel / 2)}`}
+                            {paragraph.emotion} {isExpanded && `• ${Math.ceil(actualEmotionLevel / 2)}`}
                         </div>
                     </div>
 
@@ -556,8 +550,7 @@ const ParagraphCard: React.FC<ParagraphCardProps> = ({
                             </span>
                             <div style={{ display: 'flex', gap: '4px' }}>
                                 {[1, 2, 3, 4, 5].map((level) => {
-                                    // Map 1-10 scale to 5 dots: 1-2→1, 3-4→2, 5-6→3, 7-8→4, 9-10→5
-                                    const mappedLevel = Math.ceil(testEmotionLevel / 2);
+                                    const mappedLevel = Math.ceil(actualEmotionLevel / 2);
                                     const isActive = level <= mappedLevel;
 
                                     return (
@@ -568,13 +561,13 @@ const ParagraphCard: React.FC<ParagraphCardProps> = ({
                                                 height: isExpanded ? '8px' : '6px',
                                                 borderRadius: '50%',
                                                 backgroundColor: isActive ?
-                                                    (isExpanded ? emotionStyle.borderColor : '#ffffff') :
+                                                    emotionStyle.borderColor : // Use emotion color for both expanded and feed
                                                     (isExpanded ? 'rgba(107, 114, 128, 0.3)' : 'rgba(255, 255, 255, 0.3)'),
                                                 transition: 'all 0.2s',
                                                 boxShadow: isActive ?
                                                     (isExpanded
                                                         ? `0 0 8px ${emotionStyle.borderColor}60`
-                                                        : '0 0 4px rgba(255, 255, 255, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3)'
+                                                        : `0 0 4px ${emotionStyle.borderColor}50, 0 1px 2px rgba(0, 0, 0, 0.3)` // Use emotion color for feed glow
                                                     ) :
                                                     'none'
                                             }}

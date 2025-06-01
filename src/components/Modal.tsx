@@ -88,17 +88,9 @@ const getEmotionStyles = (emotion: string, emotionLevel: number) => {
 };
 
 const Modal: React.FC<ModalProps> = ({ paragraph, onClose }) => {
-    // Generate random emotion level 1-10 for testing (consistent per paragraph ID)
-    const getRandomEmotionLevel = (id: string) => {
-        const hash = id.split('').reduce((a, b) => {
-            a = ((a << 5) - a) + b.charCodeAt(0);
-            return a & a;
-        }, 0);
-        return Math.abs(hash % 10) + 1; // 1-10
-    };
-
-    const testEmotionLevel = getRandomEmotionLevel(paragraph.id);
-    const emotionStyle = getEmotionStyles(paragraph.emotion, testEmotionLevel);
+    // Use actual emotion level from database instead of randomized for testing
+    const actualEmotionLevel = paragraph.emotion_level || 5; // Fallback to 5 if not set
+    const emotionStyle = getEmotionStyles(paragraph.emotion, actualEmotionLevel);
 
     useEffect(() => {
         const handleEscape = (event: KeyboardEvent) => {
@@ -266,7 +258,7 @@ const Modal: React.FC<ModalProps> = ({ paragraph, onClose }) => {
                             flexShrink: 0,
                             alignSelf: 'flex-start'
                         }}>
-                            {paragraph.emotion} • Level {Math.ceil(testEmotionLevel / 2)}
+                            {paragraph.emotion} • Level {Math.ceil(actualEmotionLevel / 2)}
                         </div>
                     </div>
                 </div>
@@ -337,7 +329,7 @@ const Modal: React.FC<ModalProps> = ({ paragraph, onClose }) => {
                         <div style={{ display: 'flex', gap: '6px' }}>
                             {[1, 2, 3, 4, 5].map((level) => {
                                 // Map 1-10 scale to 5 dots: 1-2→1, 3-4→2, 5-6→3, 7-8→4, 9-10→5
-                                const mappedLevel = Math.ceil(testEmotionLevel / 2);
+                                const mappedLevel = Math.ceil(actualEmotionLevel / 2);
                                 const isActive = level <= mappedLevel;
 
                                 return (

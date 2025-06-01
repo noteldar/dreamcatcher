@@ -111,7 +111,7 @@ const RightPanel: React.FC<RightPanelProps> = ({ initialParagraphs }) => {
                             <AnimatePresence>
                                 {processedParagraphs.map((paragraph, index) => (
                                     <motion.div
-                                        key={`${paragraph.book}-${paragraph.paragraph_index}-${paragraph.id}`}
+                                        key={`${paragraph.book}-${paragraph.paragraph_index}-${paragraph.id}-${index}`}
                                         initial={{ opacity: 0, x: 100, scale: 0.9, rotateY: 15 }}
                                         animate={{
                                             opacity: 1,
