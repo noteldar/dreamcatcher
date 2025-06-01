@@ -16,6 +16,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Dreamcatcher - Emotional Journey Through Dreams",
   description: "Experience dreams through their emotional landscapes with beautiful animations and insights.",
+  icons: {
+    icon: "/dreamcatcher.png",
+    shortcut: "/dreamcatcher.png",
+    apple: "/dreamcatcher.png",
+  },
 };
 
 export default function RootLayout({
