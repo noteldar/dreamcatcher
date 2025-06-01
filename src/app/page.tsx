@@ -1,103 +1,234 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import LeftPanel from "@/components/LeftPanel";
+import PersonaSelector from "@/components/PersonaSelector";
+import RightPanel from "@/components/RightPanel";
+import { ParagraphDocument } from "@/types";
+import { useEffect, useState } from "react";
+
+// Sample data as fallback
+const sampleParagraphs: ParagraphDocument[] = [
+  {
+    id: "para_20250531_0001",
+    persona_name: "Nick Carraway",
+    persona_id: "persona_nick_carraway_1925",
+    book: "The Great Gatsby",
+    paragraph_index: 1,
+    paragraph: "In my younger and more vulnerable years my father gave me some advice that I've carried with me ever since. 'Whenever you feel like criticizing anyone,' he told me, 'just remember that all the people in this world haven't had the advantages that you've had.'",
+    emotion: "curiosity",
+    emotion_level: 6,
+    justification: "The opening sets a contemplative, introspective mood with the narrator reflecting on wisdom passed down from his father."
+  },
+  {
+    id: "para_20250531_0002",
+    persona_name: "Nick Carraway",
+    persona_id: "persona_nick_carraway_1925",
+    book: "The Great Gatsby",
+    paragraph_index: 2,
+    paragraph: "And so with the sunshine and the great bursts of leaves growing on the trees, just as things grow in fast movies, I had that familiar conviction that life was beginning over again with the summer.",
+    emotion: "excitement",
+    emotion_level: 8,
+    justification: "The vivid imagery of nature and rebirth creates a sense of renewal and anticipation for new possibilities."
+  },
+  {
+    id: "para_20250531_0003",
+    persona_name: "Nick Carraway",
+    persona_id: "persona_nick_carraway_1925",
+    book: "The Great Gatsby",
+    paragraph_index: 3,
+    paragraph: "He had changed since his New Haven years. Now he was a sturdy straw-haired man of thirty with a rather hard mouth and a supercilious manner.",
+    emotion: "disappointment",
+    emotion_level: 4,
+    justification: "The description suggests a negative transformation in character, implying loss of youth and innocence."
+  },
+  {
+    id: "para_20250531_0004",
+    persona_name: "Nick Carraway",
+    persona_id: "persona_nick_carraway_1925",
+    book: "The Great Gatsby",
+    paragraph_index: 4,
+    paragraph: "I was within and without, simultaneously enchanted and repelled by the inexhaustible variety of life.",
+    emotion: "surprise",
+    emotion_level: 10,
+    justification: "The paradoxical feeling of being both attracted and repulsed creates a sense of overwhelming discovery and confusion."
+  },
+  {
+    id: "para_20250531_0005",
+    persona_name: "Nick Carraway",
+    persona_id: "persona_nick_carraway_1925",
+    book: "The Great Gatsby",
+    paragraph_index: 5,
+    paragraph: "So we beat on, boats against the current, borne back ceaselessly into the past.",
+    emotion: "sadness",
+    emotion_level: 7,
+    justification: "The famous closing line evokes a melancholic sense of futility and the inescapable weight of history."
+  }
+];
+
+export default function HomePage() {
+  const [paragraphs, setParagraphs] = useState<ParagraphDocument[]>([]);
+  const [personas, setPersonas] = useState<string[]>([]);
+  const [selectedPersona, setSelectedPersona] = useState<string>('');
+  const [isLoadingPersonas, setIsLoadingPersonas] = useState(true);
+  const [isLoadingParagraphs, setIsLoadingParagraphs] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch personas on component mount
+  useEffect(() => {
+    const fetchPersonas = async () => {
+      try {
+        setIsLoadingPersonas(true);
+        const response = await fetch('/api/personas');
+        const data = await response.json();
+
+        if (data.success && data.personas.length > 0) {
+          setPersonas(data.personas);
+          setSelectedPersona(data.personas[0]); // Select first persona
+        } else {
+          console.warn('No personas found, using sample data');
+          setPersonas(['Nick Carraway']);
+          setSelectedPersona('Nick Carraway');
+          setParagraphs(sampleParagraphs);
+          setError('Using sample data - no personas found in database');
+        }
+      } catch (err) {
+        console.warn('Failed to fetch personas, using sample data:', err);
+        setPersonas(['Nick Carraway']);
+        setSelectedPersona('Nick Carraway');
+        setParagraphs(sampleParagraphs);
+        setError('Using sample data - failed to connect to database');
+      } finally {
+        setIsLoadingPersonas(false);
+      }
+    };
+
+    fetchPersonas();
+  }, []);
+
+  // Fetch paragraphs when persona changes
+  useEffect(() => {
+    if (!selectedPersona) return;
+
+    const fetchParagraphs = async () => {
+      try {
+        setIsLoadingParagraphs(true);
+        setError(null);
+
+        const response = await fetch(`/api/paragraphs?persona_name=${encodeURIComponent(selectedPersona)}&limit=20`);
+        const data = await response.json();
+
+        if (data.success && data.paragraphs.length > 0) {
+          setParagraphs(data.paragraphs);
+        } else {
+          console.warn(`No paragraphs found for ${selectedPersona}, using sample data`);
+          setParagraphs(sampleParagraphs);
+          setError(`No paragraphs found for ${selectedPersona} - using sample data`);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch paragraphs, using sample data:', err);
+        setParagraphs(sampleParagraphs);
+        setError(`Failed to load paragraphs for ${selectedPersona} - using sample data`);
+      } finally {
+        setIsLoadingParagraphs(false);
+      }
+    };
+
+    fetchParagraphs();
+  }, [selectedPersona]);
+
+  const handlePersonaChange = (persona: string) => {
+    setSelectedPersona(persona);
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+    <div style={{ minHeight: 'calc(100vh - 200px)' }}>
+      {/* Persona Selector */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        marginBottom: '32px'
+      }}>
+        <PersonaSelector
+          personas={personas}
+          selectedPersona={selectedPersona}
+          onPersonaChange={handlePersonaChange}
+          isLoading={isLoadingPersonas}
         />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+      </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {error && (
+        <div className="warning-message">
+          <p>⚠️ {error}</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      )}
+
+      {/* Loading state for paragraphs */}
+      {isLoadingParagraphs && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '40px',
+          gap: '16px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            border: '3px solid rgba(139, 92, 246, 0.3)',
+            borderTopColor: '#8b5cf6',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }}></div>
+          <span style={{
+            color: 'rgba(255, 255, 255, 0.8)',
+            fontSize: '18px',
+            fontWeight: '500'
+          }}>
+            Loading {selectedPersona}&apos;s emotional journey...
+          </span>
+        </div>
+      )}
+
+      {/* Main Content Area - Only show when not loading paragraphs */}
+      {!isLoadingParagraphs && (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'row',
+          gap: '32px',
+          height: 'calc(100vh - 350px)',
+          width: '100%'
+        }}>
+          <div style={{
+            flex: '1 1 50%',
+            minWidth: '0'
+          }}>
+            <LeftPanel paragraphs={paragraphs} />
+          </div>
+          <div style={{
+            flex: '1 1 50%',
+            minWidth: '0'
+          }}>
+            <RightPanel initialParagraphs={paragraphs} />
+          </div>
+        </div>
+      )}
+
+      {/* Footer Info */}
+      {!isLoadingParagraphs && paragraphs.length > 0 && (
+        <div style={{
+          textAlign: 'center',
+          fontSize: '15px',
+          color: 'rgba(255, 255, 255, 0.7)',
+          padding: '24px 0',
+          fontWeight: '500'
+        }}>
+          <p>
+            Experiencing <span style={{ color: '#a855f7', fontWeight: '600' }}>{selectedPersona}</span>&apos;s perspective in
+            <span style={{ color: '#3b82f6', fontWeight: '600' }}> {paragraphs[0]?.book || 'literature'}</span> through
+            <span style={{ color: '#10b981', fontWeight: '600' }}> {paragraphs.length} emotional moments</span>
+          </p>
+        </div>
+      )}
     </div>
   );
 }
